@@ -204,7 +204,7 @@ function calculate2( file ){
 	let g = searchAndCountGroups(ar2d);
 	return g;
 }
-
+	
 function test() {
 	verify(8108,calculate1,  loadFile("test1.txt") );
 	console.log("test of 1 part is finished");
