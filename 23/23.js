@@ -64,14 +64,14 @@ function convertFileToNumbersArray (inputFile) {
 
 function convertFileToWords2dArray (inputFile) {
   let arr = inputFile.split(/\n/).filter(e => e.length > 0)
-  let arr2 = arr.map(item => item.split(/\s+/).map(e => e.replace(/[(),]/g, '')))
+  let arr2 = arr.map(item => item.split(/\s+/).map(e => e.replace(/[(),]/g, '')).filter(e => e.length > 0))
         .filter(item => !/\s+/.test(item))
   return arr2
 }
 
 function convertFileToChar2dArray (inputFile) {
   let arr = inputFile.split(/\n/).filter(e => e.length > 0)
-  let arr2 = arr.map(line => line.split(''))
+  let arr2 = arr.map(line => line.split('').filter(e => e.length > 0))
   return arr2
 }
 let areArraysEqual = (a1, a2) => a1.length == a2.length && a1.every((v, i) => v === a2[i])
@@ -271,6 +271,7 @@ function prepareInstructions (d2arr) {
 
 function calculate1 (file) {
   file = convertFileToWords2dArray(file)
+
   file = file.map(line => line.map(e => /-?\d+/.test(e) ? parseInt(e) : e))
   let instructions = prepareInstructions(file)
   let instructionsLength = instructions.length
@@ -296,18 +297,31 @@ function calculate2 (file, iterations) {
   file = file.map(line => line.map(e => /-?\d+/.test(e) ? parseInt(e) : e))
   let instructions = prepareInstructions(file)
   let instructionsLength = instructions.length
-  let registers = {pointer: 0, a: 1}
+  let registers = {pointer: 1, a: 1}
+  let crmap = new Map()
   for (let i = 0, ci = registers.pointer;
-    ((ci = registers.pointer) > -1) && ci < instructionsLength && i < iterations;
+    ((ci = registers.pointer) > 0) && ci < instructionsLength && i < iterations;
      ci = registers.pointer = registers.pointer + 1, i++
      ) {
-    let command = instructions[ci]
-    info(i + '. line ' + (ci + 1) + ': ' + command[0].name + ' ' + command[1])
+    let command = instructions[ci - 1]
+    // info(i + '. line ' + (ci + 1) + ': ' + command[0].name + ' ' + command[1])
     // inspect(registers)
-    // inspect(command)
 
     command[0](registers, command[1])
-    if (i % 10000000 == 0) { info(i + '. ' + registers.h); inspect(registers) }
+    let k = ci + ' ' + command[0].name + ' ' + command[1]
+    crmap.set(k, crmap.get(k) + 1 || 1)
+    // if (i > 1000) {
+    if (i % 10000000 == 0) {
+      info(i + '. ' + registers.h); inspect(registers)
+      let ar = [...crmap].sort((a, b) => a[0].split(' ')[0] - b[0].split(' ')[0])
+      ar.forEach(l => {
+        let regs = l[0].split(' ')[2].split(',')
+        let regA = regs[0]
+        let regB = regs[1]
+        let text = l[0] + '\t' + regA + '=' + getV(registers, regA) + '\t' + regB + '=' + getV(registers, regB) + '\t=>\t' + l[1]
+        info(text)
+      })
+    }
   }
   return registers.h
 }
@@ -319,7 +333,7 @@ function test1 () {
 }
 function test2 () {
   verify(26, calculate2, loadFile('test1.txt'), 100)
-  verify(2511944, calculate2, loadFile('test1.txt'), 10000000)
+  verify(2511944, calculate2, loadFile('test1.txt'), 10000000000)
   console.log('test of 2 part is finished')
 }
 
@@ -327,7 +341,8 @@ function real1 () {
   verify(4225, calculate1, loadFile('real.txt'))
 }
 function real2 () {
-  verify(2511672, calculate2, loadFile('real.txt'), 100)
+  // verify(2511672, calculate2, loadFile('real-exp.txt'), 10)
+  verify(2511672, calculate2, loadFile('real-exp.txt'), 100000000)
 }
 
 // test1()
